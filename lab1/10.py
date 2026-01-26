@@ -1,0 +1,5 @@
+s=input()
+str=s.lower()
+str2=s.upper()
+print(str2)
+print(str)
