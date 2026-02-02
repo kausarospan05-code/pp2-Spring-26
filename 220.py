@@ -1,12 +1,13 @@
-n = int(input())
-doc = {}
+import sys
+
+n=int(sys.stdin.readline())
+doc={} #dict
 for _ in range(n):
-    part = input().split()
-    if part[0] == "set":
-        doc[part[1]] = part[2]
-    else:
-        key = part[1]
-        if key in doc:
-            print(doc[key])
+    parts=sys.stdin.readline().split()
+    if parts[0]=="set": # dobav ili obnov key
+        doc[parts[1]]=parts[2]
+    elif parts[0]=="get": #key bar jok
+        if parts[1] in doc:
+            print(doc[parts[1]])#key bar i to print
         else:
-            print(f"KE: no key {key} found in the document")
+            print("KE: no key "+parts[1]+" found in the document")
