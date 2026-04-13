@@ -1,143 +1,98 @@
-import csv
-from connect import connect
-def insert_from_csv(file= 'contacts.csv'):
-    conn = connect()
-    cur = conn.cursor()
+import psycopg2
+from connect import get_connection
+
+def insert_or_update():
+    name = input("Enter name: ").strip()
+    phone = input("Enter phone: ").strip()
     try:
-        with open(file,newline='',encoding='utf-8') as f:
-            reader = csv.DictReader(f)
-            for row in reader:
-                cur.execute(
-                    "INSERT INTO contacts (first_name, last_name, phone) VALUES (%s, %s, %s)",
-                    (row['first_name'], row['last_name'], row['phone'])
-
-                )
-        conn.commit()
-        print("Contacts succesfully added.")
+        with get_connection() as conn:
+            with conn.cursor() as cur:
+                cur.execute("CALL upsert_contact(%s, %s)", (name, phone))
+                conn.commit()
+                print("Success: Contact saved.")
     except Exception as e:
-        print("Error:", e)
-    finally:
-        cur.close()
-        conn.close()
-def insert_console():
-    """Insert a contact via console"""
-    first_name = input("First name: ")
-    last_name = input("Last name: ")
-    phone = input("Phone:")
-    conn = connect()
-    cur = conn.cursor()
+        print(f"Database Error: {e}")
+
+def search():
+    pattern = input("Search term: ").strip()
     try:
-        cur.execute(
-            "INSERT INTO contacts (first_name, last_name, phone) VALUES (%s, %s, %s)" ,
-            (first_name,last_name,phone)
-        )
-        conn.commit()
-        print("Contact added.")
+        with get_connection() as conn:
+            with conn.cursor() as cur:
+                # We are calling V3 here to bypass the old error
+                cur.execute("SELECT * FROM search_contacts_v3(%s)", (pattern,))
+                rows = cur.fetchall()
+                if not rows:
+                    print("No contacts found.")
+                else:
+                    print(f"\n{'ID':<5} | {'Name':<20} | {'Phone':<15}")
+                    print("-" * 45)
+                    for r in rows:
+                        print(f"{r[0]:<5} | {r[1]:<20} | {r[2]:<15}")
     except Exception as e:
-        print("Error:",e)
-    finally:
-        cur.close()
-        conn.close()
-def update_contact():
-    """Update a contact's first name or phone number"""
-    contact_id = input("the ID:")
-    first_name = input("New First Name:")
-    phone = input("New Phone:")
+        print(f"Database Error: {e}")
 
-    conn = connect()
-    cur = conn.cursor()
+def paginate():
     try:
-        if first_name:
-            cur.execute("UPDATE contacts SET first_name=%s WHERE id=%s" , (first_name, contact_id))
-        if phone:
-            cur.execute("UPDATE contacts SET phone=%s WHERE id=%s" , (phone, contact_id))
-        conn.commit()
-        print("contact updated.")
+        limit = int(input("Limit: "))
+        offset = int(input("Offset: "))
+        with get_connection() as conn:
+            with conn.cursor() as cur:
+                cur.execute("SELECT * FROM get_contacts_paginated_v3(%s, %s)", (limit, offset))
+                rows = cur.fetchall()
+                print(f"\n{'ID':<5} | {'Name':<20} | {'Phone':<15}")
+                print("-" * 45)
+                for r in rows:
+                    print(f"{r[0]:<5} | {r[1]:<20} | {r[2]:<15}")
     except Exception as e:
-        print("Error:", e)
-    finally:
-        cur.close()
-        conn.close()
+        print(f"Database Error: {e}")
 
-def search_contacts():
-    """Search contacts by first name"""
-    name = input("Enter name to search:")
-
-    conn = connect()
-    cur = conn.cursor()
+def delete():
+    value = input("Enter name or phone to delete: ").strip()
     try:
-        query = "SELECT * FROM contacts WHERE 1=1"
-        params = []
-        if name:
-            query += " AND first_name ILIKE %s"
-            params.append(f"%{name}%")
-        cur.execute(query,params)
-        rows = cur.fetchall()
-        if rows:
-            print("Search results:")
-            for row in rows:
-                print(f"ID: {row[0]}, First Name: {row[1]}, Last Name: {row[2]}")
-        else:
-            print("No contacts found.")
+        with get_connection() as conn:
+            with conn.cursor() as cur:
+                cur.execute("CALL delete_contact(%s)", (value,))
+                conn.commit()
+                print("Contact deleted.")
     except Exception as e:
-        print("Error:" , e)
-    finally:
-        cur.close()
-        conn.close()
+        print(f"Database Error: {e}")
 
-def delete_contact():
-    """Delete a contact by first name or phone"""
-    name = input("Enter the first name: ")
-    phone = input("Enter the phone of the contact: ")
-
-    conn = connect()
-    cur = conn.cursor()
+def bulk_insert():
     try:
-        query = "DELETE FROM contacts WHERE 1=1"
-        params = []
-        if name:
-            query += " AND first_name=%s"
-            params.append(name)
-        if phone:
-            query += " AND phone=%s"
-            params.append(phone)
-        cur.execute(query,params)
-        conn.commit()
-        print("Contact(s) deleted.")
+        n = int(input("How many contacts: "))
+        names, phones = [], []
+        for i in range(n):
+            names.append(input(f"Name {i+1}: ").strip())
+            phones.append(input(f"Phone {i+1}: ").strip())
+        
+        with get_connection() as conn:
+            with conn.cursor() as cur:
+                cur.execute("CALL bulk_insert_contacts(%s, %s)", (names, phones))
+                conn.commit()
+                print("Bulk insert completed.")
     except Exception as e:
-        print("Error:", e)
-    finally:
-        cur.close()
-        conn.close()
-    
+        print(f"Database Error: {e}")
+
 def menu():
-    """User menu for the PhoneBook application"""
     while True:
-        print("\n=== PhoneBook Menu ===")
-        print("1. Insert contacts from CSV")
-        print("2. Add contact manually")
-        print("3. Update contact")
-        print("4. Search contacts")
-        print("5. Delete contact")
+        print("\n" + "="*20)
+        print("   PHONEBOOK MENU")
+        print("="*20)
+        print("1. Insert/Update")
+        print("2. Search")
+        print("3. Pagination")
+        print("4. Delete")
+        print("5. Bulk Insert")
         print("6. Exit")
-        choice = input("Choose an option (1-6): ")
-
-        if choice == '1':
-            insert_from_csv()
-        elif choice == '2':
-            insert_console()
-        elif choice == '3':
-            update_contact()
-        elif choice == '4':
-            search_contacts()
-        elif choice == '5':
-            delete_contact()
-        elif choice == '6':
-            print("Exiting PhoneBook...")
-            break
-        else:
-            print("Invalid choice, please try again.")
-
+        
+        choice = input("\nChoose: ")
+        if choice == "1": insert_or_update()
+        elif choice == "2": search()
+        elif choice == "3": paginate()
+        elif choice == "4": delete()
+        elif choice == "5": bulk_insert()
+        elif choice == "6": break
+        else: print("Invalid choice.")
 
 if __name__ == "__main__":
     menu()
