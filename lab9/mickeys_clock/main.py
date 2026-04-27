@@ -38,16 +38,22 @@ while running:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
-
-    # Logic
+# ЛОГИКА: clock.py файлынан бұрыштарды алу
+    # Ол жерде уақытқа байланысты градустар есептеледі (мысалы: 1 сек = 6 градус)
+    
     h_angle, m_angle, s_angle = get_time_angles()
 
     # Rendering
     screen.fill((255, 255, 255)) # White clock edges
-    
+    #Event Handling: pygame.QUIT арқылы бағдарламаның дұрыс жабылуын қамтамасыз етеді.
+
+#Rendering: Әр кадрда экран ақ түспен тазаланып, жаңа бұрыштар бойынша тілдер қайтадан салынып отырады.
+
+#Clock.tick(60): Процессорды артық жүктемей, бірқалыпты 60 кадр жиілігін ұстайды.
     # Draw Background
     screen.blit(clock_bg, (0, 0))
-
+# 2. Тілдерді қабат-қабат етіп салу (Орталық нүктеге қатысты айналдыру)
+    # Тәртібі: Секунд -> Сағат -> Минут
     # Draw the Tail & Hands
     blit_rotate_center(screen, tail, CENTER, s_angle)
     blit_rotate_center(screen, hour_hand, CENTER, h_angle)

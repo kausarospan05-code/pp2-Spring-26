@@ -2,9 +2,9 @@ import pygame
  
  
 class Ball:
-    RADIUS = 25          # diameter = 50px
+    RADIUS = 55          # diameter = 50px
     STEP   = 20         
-    COLOR  = (220, 40, 40)   # Red 
+    COLOR  = (255, 000, 000)   # Red 
     OUTLINE= (160, 20, 20)   # Outline
  
     def __init__(self, screen_width: int, screen_height: int):
@@ -21,7 +21,7 @@ class Ball:
         new_x = self.x + dx
         new_y = self.y + dy
  
-        # Boundary
+        # Boundary #Бұл доптың қабырғаның ішіне кіріп кетпей, дәл жиегіне тиіп тоқтауына мүмкіндік береді.
         if self.RADIUS <= new_x <= self.screen_w - self.RADIUS:
             self.x = new_x
         if self.RADIUS <= new_y <= self.screen_h - self.RADIUS:
@@ -50,5 +50,5 @@ class Ball:
  
         # Small highlight dot (top-left)
         highlight = (center[0] - self.RADIUS // 3, center[1] - self.RADIUS // 3)
-        pygame.draw.circle(surface, (255, 120, 120), highlight, self.RADIUS // 5)
+        pygame.draw.circle(surface, (255, 255, 255), highlight, self.RADIUS // 5)
  

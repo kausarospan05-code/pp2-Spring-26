@@ -1,6 +1,10 @@
 import pygame
 from player import MusicPlayer
+#Математикалық түрлендіру:
 
+#Секунд: pos_ms // 1000
+
+#Минут пен секунд форматы: f"{minutes}:{seconds:02d}" (мұндағы :02d секунд 10-нан аз болса, алдына "0" қоюға жауапты).
 WIDTH, HEIGHT = 520, 280
 WHITE  = (255, 255, 255)
 BLACK  = (0,   0,   0)
@@ -14,10 +18,10 @@ PANEL  = (50,   50,  70)
 
 def draw(screen, player, font_big, font_med, font_small):
     screen.fill(BG)
-
+# Басты тақырыпты шығару
     title = font_big.render("Music Player", True, WHITE)
     screen.blit(title, (20, 20))
-
+# Плеердің күйін тексеру (ойнап тұр ма, әлде тоқтап тұр ма?)
     if player.is_playing:
         status_text  = "▶ Playing"
         status_color = GREEN
@@ -30,7 +34,7 @@ def draw(screen, player, font_big, font_med, font_small):
 
     # Панель с информацией о треке
     pygame.draw.rect(screen, PANEL, (20, 110, WIDTH - 60, 80), border_radius=8)
-    
+    #Қазіргі тректің атын экранға шығару
     track_label = font_small.render("Now playing:", True, GRAY)
     screen.blit(track_label, (35, 120))
 
@@ -40,6 +44,7 @@ def draw(screen, player, font_big, font_med, font_small):
     # === НОВОЕ: отображение прошедшего времени ===
     elapsed_time = "0:00"
     if player.is_playing:
+        # get_pos() трек басталғаннан бергі уақытты миллисекундпен береді
         pos_ms = pygame.mixer.music.get_pos()          # миллисекунды с начала трека
         if pos_ms >= 0:
             total_sec = pos_ms // 1000
@@ -74,7 +79,7 @@ def main():
     font_big   = pygame.font.SysFont("Arial", 28, bold=True)
     font_med   = pygame.font.SysFont("Arial", 22)
     font_small = pygame.font.SysFont("Arial", 16)
-
+# Плеер класын шақыру
     player = MusicPlayer()
     clock  = pygame.time.Clock()
 
@@ -93,7 +98,7 @@ def main():
                 elif event.key == pygame.K_n:  player.next_track()
                 elif event.key == pygame.K_b:  player.previous_track()
                 elif event.key == pygame.K_q:  running = False
-
+# Егер трек өздігінен аяқталса, автоматты түрде келесісін қосу
             if event.type == SONG_END:
                 if not player.manual_change:
                     player.next_track()

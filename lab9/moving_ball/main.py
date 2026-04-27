@@ -4,7 +4,7 @@ from ball import Ball
  
 # Constants
 
-WIDTH, HEIGHT = 600, 500
+WIDTH, HEIGHT = 500, 600
 FPS           = 60
 WHITE         = (255, 255, 255)
 BLACK         = (0,   0,   0)
@@ -12,7 +12,7 @@ LIGHT_GRAY    = (230, 230, 230)
  
  
 def draw_grid(surface: pygame.Surface):
-    for x in range(0, WIDTH, 40):
+    for x in range(0, WIDTH, 40):#Мен тордың қадамын $40$ пиксель етіп алдым, ал доптың қадамы — $20$ пиксель. Бұл доптың әр екі қадамы тордың бір шаршысына тең дегенді білдіреді. Мұндай модульдік тор (modular grid) деңгейлерді (levels) құрастыруда және объектілерді теңестіруде өте ыңғайлы
         pygame.draw.line(surface, LIGHT_GRAY, (x, 0), (x, HEIGHT), 1)
     for y in range(0, HEIGHT, 40):
         pygame.draw.line(surface, LIGHT_GRAY, (0, y), (WIDTH, y), 1)
@@ -55,7 +55,7 @@ def main():
         draw_hud(screen, ball, font)
  
         # Screen border
-        pygame.draw.rect(screen, BLACK, (0, 0, WIDTH, HEIGHT), 2)
+        pygame.draw.rect(screen, BLACK, (0, 0, WIDTH, HEIGHT), 2) #Егер сызық қалыңдығын (2) берсеr, ол тіктөртбұрыштың сыртынан емес, ішінен сызылады.
  
         ball.draw(screen)
         pygame.display.flip()
