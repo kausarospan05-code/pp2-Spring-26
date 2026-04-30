@@ -1,10 +1,11 @@
-# connect.py
-
 import psycopg2
-from config import load_config
+from config import DB_CONFIG
 
 
 def connect():
-    config = load_config()
-    conn = psycopg2.connect(**config)
-    return conn
+    try:
+        conn = psycopg2.connect(**DB_CONFIG)
+        return conn
+    except Exception as e:
+        print("Connection error:", e)
+        return None
