@@ -1,105 +1,91 @@
 import json
-from pathlib import Path
+import os
+from datetime import datetime
 
+SETTINGS_FILE = "settings.json"
+LEADERBOARD_FILE = "leaderboard.json"
 
 DEFAULT_SETTINGS = {
-    "sound_on": True,
-    "car_color": "blue",
-    "difficulty": "normal",
-    "last_username": "Player",
+    "sound_enabled": True,
+    "car_color": "green",
+    "difficulty": "normal"
 }
 
-
-def _read_json(path, default_value):
-    file_path = Path(path)
-    if not file_path.exists():
-        return default_value
-
-    try:
-        with file_path.open("r", encoding="utf-8") as json_file:
-            return json.load(json_file)
-    except (OSError, json.JSONDecodeError):
-        return default_value
-
-
-def _write_json(path, payload):
-    file_path = Path(path)
-    with file_path.open("w", encoding="utf-8") as json_file:
-        json.dump(payload, json_file, ensure_ascii=False, indent=2)
-
-
-def load_settings(base_dir):
-    path = Path(base_dir) / "settings.json"
-    payload = _read_json(path, {})
-    settings = DEFAULT_SETTINGS.copy()
-
-    if isinstance(payload, dict):
-        settings.update(
-            {
-                "sound_on": bool(payload.get("sound_on", settings["sound_on"])),
-                "car_color": str(payload.get("car_color", settings["car_color"])),
-                "difficulty": str(payload.get("difficulty", settings["difficulty"])),
-                "last_username": str(
-                    payload.get("last_username", settings["last_username"])
-                ),
-            }
+class LeaderboardEntry:
+    def __init__(self, name, score, distance, coins, date=None):
+        self.name = name
+        self.score = score
+        self.distance = distance
+        self.coins = coins
+        self.date = date if date else datetime.now().strftime("%Y-%m-%d %H:%M")
+    
+    def to_dict(self):
+        return {
+            "name": self.name,
+            "score": self.score,
+            "distance": self.distance,
+            "coins": self.coins,
+            "date": self.date
+        }
+    
+    @staticmethod
+    def from_dict(data):
+        return LeaderboardEntry(
+            data["name"],
+            data["score"],
+            data["distance"],
+            data["coins"],
+            data.get("date", "")
         )
 
-    return settings
+def save_settings(settings):
+    try:
+        with open(SETTINGS_FILE, 'w') as f:
+            json.dump(settings, f, indent=4)
+        return True
+    except Exception as e:
+        print(f"Error saving settings: {e}")
+        return False
 
+def load_settings():
+    if not os.path.exists(SETTINGS_FILE):
+        save_settings(DEFAULT_SETTINGS)
+        return DEFAULT_SETTINGS.copy()
+    
+    try:
+        with open(SETTINGS_FILE, 'r') as f:
+            return json.load(f)
+    except Exception as e:
+        print(f"Error loading settings: {e}")
+        return DEFAULT_SETTINGS.copy()
 
-def save_settings(base_dir, settings):
-    path = Path(base_dir) / "settings.json"
-    payload = DEFAULT_SETTINGS.copy()
-    payload.update(settings)
-    _write_json(path, payload)
+def save_leaderboard(entries):
+    try:
+        data = [entry.to_dict() for entry in entries]
+        with open(LEADERBOARD_FILE, 'w') as f:
+            json.dump(data, f, indent=4)
+        return True
+    except Exception as e:
+        print(f"Error saving leaderboard: {e}")
+        return False
 
-
-def load_leaderboard(base_dir):
-    path = Path(base_dir) / "leaderboard.json"
-    payload = _read_json(path, [])
-
-    if not isinstance(payload, list):
+def load_leaderboard():
+    if not os.path.exists(LEADERBOARD_FILE):
+        return []
+    
+    try:
+        with open(LEADERBOARD_FILE, 'r') as f:
+            data = json.load(f)
+        return [LeaderboardEntry.from_dict(entry) for entry in data]
+    except Exception as e:
+        print(f"Error loading leaderboard: {e}")
         return []
 
-    entries = []
-    for entry in payload:
-        if not isinstance(entry, dict):
-            continue
-        entries.append(
-            {
-                "name": str(entry.get("name", "Player"))[:20],
-                "score": int(entry.get("score", 0)),
-                "distance": int(entry.get("distance", 0)),
-                "coins": int(entry.get("coins", 0)),
-                "difficulty": str(entry.get("difficulty", "normal")),
-                "result": str(entry.get("result", "Crash")),
-            }
-        )
+def add_score_to_leaderboard(name, score, distance, coins, max_entries=10):
+    entries = load_leaderboard()
+    new_entry = LeaderboardEntry(name, score, distance, coins)
+    entries.append(new_entry)
+    entries.sort(key=lambda x: x.score, reverse=True)
+    entries = entries[:max_entries]
+    save_leaderboard(entries)
     return entries
-
-
-def save_leaderboard(base_dir, entries):
-    path = Path(base_dir) / "leaderboard.json"
-    ordered = sorted(
-        entries,
-        key=lambda item: (item.get("score", 0), item.get("distance", 0)),
-        reverse=True,
-    )[:10]
-    _write_json(path, ordered)
-
-
-def add_leaderboard_entry(base_dir, entry):
-    entries = load_leaderboard(base_dir)
-    entries.append(
-        {
-            "name": str(entry.get("name", "Player"))[:20],
-            "score": int(entry.get("score", 0)),
-            "distance": int(entry.get("distance", 0)),
-            "coins": int(entry.get("coins", 0)),
-            "difficulty": str(entry.get("difficulty", "normal")),
-            "result": str(entry.get("result", "Crash")),
-        }
-    )
-    save_leaderboard(base_dir, entries)
-    return load_leaderboard(base_dir)

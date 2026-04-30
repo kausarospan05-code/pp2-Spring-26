@@ -1,6 +1,5 @@
 {
-  "sound_on": false,
-  "car_color": "blue",
-  "difficulty": "hard",
-  "last_username": "aru"
+    "sound_enabled": true,
+    "car_color": "yellow",
+    "difficulty": "easy"
 }
